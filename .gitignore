@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+*.egg-info/
+dist/
+
+# React
+frontend/node_modules/
+frontend/build/
+frontend/.env
+
+# Mac
+.DS_Store
+
+# AWS / SSH Keys (IMPORTANT - never push these!)
+*.pem
+*.key
+
+# FastAPI
+.env
