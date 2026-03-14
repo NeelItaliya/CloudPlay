@@ -22,13 +22,15 @@ jobs:
             cd /home/ubuntu/tic-tac-toe
             git pull origin main
 
+            # Backend - FastAPI
             cd Server
             source venv/bin/activate
             pip install -r requirements.txt
             deactivate
             sudo systemctl restart tictactoe
 
-            cd ../frontend
+            # Frontend - React
+            cd /home/ubuntu/tic-tac-toe/frontend
             npm install
             npm run build
             echo "Deployment successful! ✅"

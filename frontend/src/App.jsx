@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Trophy, RotateCcw, Play, Cloud, Wifi, Sparkles } from "lucide-react";
 
-const BASE_URL = "http://65.2.129.233:8000";
+const BASE_URL = "http://tic-tac-toe-alb-1063861191.ap-south-1.elb.amazonaws.com";
 const initialBoard = Array(9).fill("");
 
 export default function App() {
