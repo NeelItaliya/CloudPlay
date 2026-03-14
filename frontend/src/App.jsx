@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Trophy, RotateCcw, Play, Cloud, Wifi, Sparkles } from "lucide-react";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = "http://cloudplay-alb-1194727634.ap-south-1.elb.amazonaws.com";
 const initialBoard = Array(9).fill("");
 
 export default function App() {
