@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
-import redis
+import boto3
 import json
 import os
+from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 
 app = FastAPI()
 
@@ -18,12 +19,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SESSION_TIMEOUT_MINUTES = 30
-SESSION_TTL_SECONDS = SESSION_TIMEOUT_MINUTES * 60
+# DynamoDB setup — uses IAM role on EC2, no credentials needed
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
+DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE", "cloudplay-sessions")
+SESSION_TTL_SECONDS = 30 * 60  # 30 minutes
 
-# Redis connection — reads REDIS_URL from environment, falls back to localhost
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-r = redis.from_url(REDIS_URL, decode_responses=True)
+dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE)
 
 
 class StartSessionResponse(BaseModel):
@@ -41,24 +43,39 @@ class EndSessionRequest(BaseModel):
     session_id: str
 
 
-def get_session_from_redis(session_id: str) -> dict:
-    data = r.get(f"session:{session_id}")
-    if not data:
+def get_session(session_id: str) -> dict:
+    try:
+        response = table.get_item(Key={"session_id": session_id})
+        item = response.get("Item")
+        if not item:
+            return None
+        item["board"] = json.loads(item["board"])
+        item["game_over"] = bool(item["game_over"])
+        item["winner"] = item.get("winner") or None
+        return item
+    except ClientError:
         return None
-    return json.loads(data)
 
-def save_session_to_redis(session_id: str, session: dict):
-    r.setex(
-        f"session:{session_id}",
-        SESSION_TTL_SECONDS,
-        json.dumps(session)
-    )
+def save_session(session_id: str, session: dict):
+    import time
+    table.put_item(Item={
+        "session_id": session_id,
+        "board": json.dumps(session["board"]),
+        "current_player": session["current_player"],
+        "winner": session.get("winner") or "",
+        "game_over": int(session["game_over"]),
+        "ttl": int(time.time()) + SESSION_TTL_SECONDS
+    })
 
-def delete_session_from_redis(session_id: str):
-    r.delete(f"session:{session_id}")
+def delete_session(session_id: str):
+    table.delete_item(Key={"session_id": session_id})
 
-def count_active_sessions() -> int:
-    return len(r.keys("session:*"))
+def count_sessions() -> int:
+    try:
+        response = table.scan(Select="COUNT")
+        return response.get("Count", 0)
+    except ClientError:
+        return 0
 
 
 def check_winner(board):
@@ -81,51 +98,45 @@ def root():
 @app.get("/health")
 def health():
     try:
-        r.ping()
-        redis_status = "ok"
+        table.table_status
+        db_status = "ok"
     except Exception:
-        redis_status = "unreachable"
+        db_status = "unreachable"
     return {
         "status": "ok",
-        "redis": redis_status,
-        "active_sessions": count_active_sessions()
+        "dynamodb": db_status,
+        "active_sessions": count_sessions()
     }
 
 @app.post("/session/start", response_model=StartSessionResponse)
 def start_session():
     session_id = str(uuid4())
-
     session = {
         "board": ["", "", "", "", "", "", "", "", ""],
         "current_player": "X",
         "winner": None,
         "game_over": False,
     }
-
-    save_session_to_redis(session_id, session)
-
-    return {
-        "session_id": session_id,
-        **session
-    }
+    save_session(session_id, session)
+    return {"session_id": session_id, **session}
 
 @app.get("/session/{session_id}")
 def get_session_state(session_id: str):
-    session = get_session_from_redis(session_id)
+    session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    # Refresh TTL on access
-    save_session_to_redis(session_id, session)
-
+    save_session(session_id, session)
     return {
         "session_id": session_id,
-        **session
+        "board": session["board"],
+        "current_player": session["current_player"],
+        "winner": session["winner"],
+        "game_over": session["game_over"]
     }
 
 @app.post("/session/move")
 def make_move(request: MoveRequest):
-    session = get_session_from_redis(request.session_id)
+    session = get_session(request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -150,7 +161,7 @@ def make_move(request: MoveRequest):
     else:
         session["current_player"] = "O" if session["current_player"] == "X" else "X"
 
-    save_session_to_redis(request.session_id, session)
+    save_session(request.session_id, session)
 
     return {
         "board": session["board"],
@@ -161,16 +172,12 @@ def make_move(request: MoveRequest):
 
 @app.post("/session/end")
 def end_session(request: EndSessionRequest):
-    session = get_session_from_redis(request.session_id)
+    session = get_session(request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    delete_session_from_redis(request.session_id)
-
+    delete_session(request.session_id)
     return {"message": "Session ended successfully"}
 
 @app.get("/sessions")
 def list_sessions():
-    return {
-        "active_sessions": count_active_sessions()
-    }
+    return {"active_sessions": count_sessions()}

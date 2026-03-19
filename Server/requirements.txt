@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 pydantic
-redis
+boto3
