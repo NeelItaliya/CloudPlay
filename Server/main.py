@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import boto3
 import json
 import os
-from boto3.dynamodb.conditions import Key
+import time
 from botocore.exceptions import ClientError
 
 app = FastAPI()
@@ -28,12 +28,18 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMODB_TABLE)
 
 
+class StartSessionRequest(BaseModel):
+    player_x: str
+    player_o: str
+
 class StartSessionResponse(BaseModel):
     session_id: str
     board: List[str]
     current_player: str
     winner: Optional[str]
     game_over: bool
+    player_x: str
+    player_o: str
 
 class MoveRequest(BaseModel):
     session_id: str
@@ -57,13 +63,14 @@ def get_session(session_id: str) -> dict:
         return None
 
 def save_session(session_id: str, session: dict):
-    import time
     table.put_item(Item={
         "session_id": session_id,
         "board": json.dumps(session["board"]),
         "current_player": session["current_player"],
         "winner": session.get("winner") or "",
         "game_over": int(session["game_over"]),
+        "player_x": session.get("player_x", "Player X"),
+        "player_o": session.get("player_o", "Player O"),
         "ttl": int(time.time()) + SESSION_TTL_SECONDS
     })
 
@@ -109,13 +116,15 @@ def health():
     }
 
 @app.post("/session/start", response_model=StartSessionResponse)
-def start_session():
+def start_session(request: StartSessionRequest):
     session_id = str(uuid4())
     session = {
         "board": ["", "", "", "", "", "", "", "", ""],
         "current_player": "X",
         "winner": None,
         "game_over": False,
+        "player_x": request.player_x,
+        "player_o": request.player_o,
     }
     save_session(session_id, session)
     return {"session_id": session_id, **session}
@@ -131,7 +140,9 @@ def get_session_state(session_id: str):
         "board": session["board"],
         "current_player": session["current_player"],
         "winner": session["winner"],
-        "game_over": session["game_over"]
+        "game_over": session["game_over"],
+        "player_x": session.get("player_x", "Player X"),
+        "player_o": session.get("player_o", "Player O"),
     }
 
 @app.post("/session/move")
@@ -151,9 +162,11 @@ def make_move(request: MoveRequest):
 
     session["board"][request.position] = session["current_player"]
 
-    winner = check_winner(session["board"])
-    if winner:
-        session["winner"] = winner
+    winner_mark = check_winner(session["board"])
+    if winner_mark:
+        # Store actual player name as winner
+        winner_name = session["player_x"] if winner_mark == "X" else session["player_o"]
+        session["winner"] = winner_name
         session["game_over"] = True
     elif "" not in session["board"]:
         session["winner"] = "Draw"
@@ -167,7 +180,9 @@ def make_move(request: MoveRequest):
         "board": session["board"],
         "current_player": session["current_player"],
         "winner": session["winner"],
-        "game_over": session["game_over"]
+        "game_over": session["game_over"],
+        "player_x": session.get("player_x", "Player X"),
+        "player_o": session.get("player_o", "Player O"),
     }
 
 @app.post("/session/end")

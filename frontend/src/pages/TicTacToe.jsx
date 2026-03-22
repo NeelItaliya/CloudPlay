@@ -1,28 +1,119 @@
 import React, { useMemo, useState } from "react";
 
-const BASE_URL = "http://cloudplay-alb-926131300.ap-south-1.elb.amazonaws.com";
+const BASE_URL = import.meta.env.VITE_API_URL;
 const initialBoard = Array(9).fill("");
+
+function PlayerModal({ onStart, onClose, loading }) {
+  const [playerX, setPlayerX] = useState("");
+  const [playerO, setPlayerO] = useState("");
+
+  const handleStart = () => {
+    if (!playerX.trim() || !playerO.trim()) return;
+    onStart(playerX.trim(), playerO.trim());
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md bg-[#0d1117] border border-white/10 rounded-2xl p-8 shadow-2xl">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-3">
+            New Game
+          </div>
+          <h2 className="text-2xl font-black text-white">Enter Player Names</h2>
+          <p className="text-gray-400 text-sm mt-1">Both players need a name to start</p>
+        </div>
+
+        {/* Inputs */}
+        <div className="space-y-4 mb-8">
+          <div>
+            <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2 block">
+              Player X
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 font-black text-lg">X</span>
+              <input
+                type="text"
+                value={playerX}
+                onChange={(e) => setPlayerX(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && document.getElementById("playerO-input").focus()}
+                placeholder="Enter name..."
+                maxLength={20}
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2 block">
+              Player O
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-400 font-black text-lg">O</span>
+              <input
+                id="playerO-input"
+                type="text"
+                value={playerO}
+                onChange={(e) => setPlayerO(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleStart()}
+                placeholder="Enter name..."
+                maxLength={20}
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-pink-500/50 focus:bg-white/8 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Button */}
+        <button
+          onClick={handleStart}
+          disabled={!playerX.trim() || !playerO.trim() || loading}
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
+        >
+          {loading ? "Starting..." : "Start Game"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function TicTacToe({ navigate }) {
   const [sessionId, setSessionId] = useState(null);
   const [board, setBoard] = useState(initialBoard);
   const [status, setStatus] = useState("Press Start Game to begin");
   const [currentPlayer, setCurrentPlayer] = useState("X");
+  const [currentPlayerName, setCurrentPlayerName] = useState("");
+  const [playerX, setPlayerX] = useState("");
+  const [playerO, setPlayerO] = useState("");
   const [winner, setWinner] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const filledCount = useMemo(() => board.filter(Boolean).length, [board]);
 
-  const startSession = async () => {
+  const startSession = async (nameX, nameO) => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`${BASE_URL}/session/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_name: "Player1" }),
+        body: JSON.stringify({ player_x: nameX, player_o: nameO }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.detail || "Unable to start session");
@@ -31,9 +122,13 @@ export default function TicTacToe({ navigate }) {
       setWinner(null);
       setGameOver(false);
       setCurrentPlayer(data.current_player || "X");
-      setStatus(`Session ready · ${data.session_id.slice(0, 8)}...`);
+      setCurrentPlayerName(nameX);
+      setPlayerX(nameX);
+      setPlayerO(nameO);
+      setStatus(`${nameX}'s turn`);
+      setShowModal(false);
     } catch (e) {
-      setError(`Could not connect to backend`);
+      setError("Could not connect to backend");
       setStatus("Connection failed");
     } finally {
       setLoading(false);
@@ -54,6 +149,8 @@ export default function TicTacToe({ navigate }) {
       if (!response.ok) throw new Error(data?.detail || "Move failed");
       setBoard(data.board || initialBoard);
       setCurrentPlayer(data.current_player || "X");
+      const nextName = data.current_player === "X" ? playerX : playerO;
+      setCurrentPlayerName(nextName);
       setWinner(data.winner || null);
       setGameOver(Boolean(data.game_over));
       if (data.game_over) {
@@ -61,7 +158,7 @@ export default function TicTacToe({ navigate }) {
         else if (data.winner) setStatus(`${data.winner} wins! 🎉`);
         else setStatus("Game over");
       } else {
-        setStatus(`Turn · ${data.current_player || "X"}`);
+        setStatus(`${nextName}'s turn`);
       }
     } catch (e) {
       setError(e.message || "Could not make move");
@@ -76,12 +173,20 @@ export default function TicTacToe({ navigate }) {
     setWinner(null);
     setGameOver(false);
     setCurrentPlayer("X");
+    setCurrentPlayerName("");
+    setPlayerX("");
+    setPlayerO("");
     setError(null);
     setStatus("Press Start Game to begin");
   };
 
   return (
     <div className="relative min-h-screen pt-24 pb-16 px-6">
+      {/* Player name modal */}
+      {showModal && (
+        <PlayerModal onStart={startSession} onClose={() => setShowModal(false)} loading={loading} />
+      )}
+
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]" />
@@ -91,7 +196,7 @@ export default function TicTacToe({ navigate }) {
         {/* Back button */}
         <button
           onClick={() => navigate("games")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -108,6 +213,20 @@ export default function TicTacToe({ navigate }) {
               </div>
               <h1 className="text-4xl font-black text-white">Tic Tac Toe</h1>
             </div>
+
+            {/* Player tags */}
+            {playerX && playerO && (
+              <div className="flex gap-3">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${currentPlayer === "X" && !gameOver ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/8 bg-white/[0.02]"}`}>
+                  <span className="text-cyan-400 font-black text-sm">X</span>
+                  <span className="text-white text-sm font-medium">{playerX}</span>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${currentPlayer === "O" && !gameOver ? "border-pink-500/40 bg-pink-500/10" : "border-white/8 bg-white/[0.02]"}`}>
+                  <span className="text-pink-400 font-black text-sm">O</span>
+                  <span className="text-white text-sm font-medium">{playerO}</span>
+                </div>
+              </div>
+            )}
 
             {/* Board */}
             <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-6">
@@ -136,11 +255,11 @@ export default function TicTacToe({ navigate }) {
             {/* Buttons */}
             <div className="flex gap-3">
               <button
-                onClick={startSession}
+                onClick={() => setShowModal(true)}
                 disabled={loading}
                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-cyan-500/20"
               >
-                {loading ? "Starting..." : sessionId ? "New Game" : "Start Game"}
+                {sessionId ? "New Game" : "Start Game"}
               </button>
               <button
                 onClick={resetLocal}
@@ -165,7 +284,7 @@ export default function TicTacToe({ navigate }) {
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Session", value: sessionId ? `${sessionId.slice(0, 6)}...` : "—" },
-                { label: "Turn", value: gameOver ? "Done" : currentPlayer },
+                { label: "Turn", value: gameOver ? "Done" : (currentPlayerName || currentPlayer) },
                 { label: "Moves", value: `${filledCount}/9` },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-4">
@@ -204,7 +323,7 @@ export default function TicTacToe({ navigate }) {
               <div className="space-y-2">
                 {[
                   { label: "Backend", value: "FastAPI on EC2" },
-                  { label: "Sessions", value: "Redis" },
+                  { label: "Sessions", value: "AWS DynamoDB" },
                   { label: "Scaling", value: "AWS ASG + ALB" },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between text-sm">
