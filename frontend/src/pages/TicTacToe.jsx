@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = "http://cloudplay-alb-2017741466.ap-south-1.elb.amazonaws.com";
 const initialBoard = Array(9).fill("");
 
 function PlayerModal({ onStart, onClose, loading }) {

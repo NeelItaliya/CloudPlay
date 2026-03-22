@@ -10,7 +10,7 @@ variable "vpc_id" {
 
 variable "ami_id" {
   description = "AMI ID for launch template — use cloudplay-backend-v2 AMI ID"
-  default     = "ami-0332769a9fb161222"
+  default     = "ami-09f47ea4c650c644e"
 }
 
 variable "instance_type" {
