@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const BASE_URL = "http://cloudplay-alb-109803208.ap-south-1.elb.amazonaws.com";
+const BASE_URL = "http://cloudplay-alb-926131300.ap-south-1.elb.amazonaws.com";
 const initialBoard = Array(9).fill("");
 
 export default function TicTacToe({ navigate }) {

@@ -28,6 +28,11 @@ variable "ec2_security_group_id" {
   default     = "sg-049f5c66bc83b7c96"
 }
 
+variable "iam_instance_profile" {
+  description = "IAM instance profile name for DynamoDB access"
+  default     = "cloudplay-ec2-role"
+}
+
 provider "aws" {
   region     = var.aws_region
   access_key = "AKIA4FDIOE3NIM2Q26N6"

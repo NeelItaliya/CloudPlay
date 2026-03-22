@@ -1,7 +1,3 @@
-# provider "aws" {
-#   region = var.aws_region
-# }
-
 # ─── Data: reference existing VPC and subnets ──────────────────────────────
 
 data "aws_subnets" "public" {
@@ -98,6 +94,11 @@ resource "aws_launch_template" "cloudplay_lt" {
   # Reuse your existing EC2 security group
   vpc_security_group_ids = [var.ec2_security_group_id]
 
+  # IAM role — allows EC2 instances to access DynamoDB
+  iam_instance_profile {
+    name = var.iam_instance_profile
+  }
+
   tag_specifications {
     resource_type = "instance"
     tags = {
@@ -141,6 +142,7 @@ resource "aws_autoscaling_policy" "scale_policy" {
       predefined_metric_type = "ALBRequestCountPerTarget"
       resource_label         = "${aws_lb.cloudplay_alb.arn_suffix}/${aws_lb_target_group.cloudplay_tg.arn_suffix}"
     }
-    target_value = 3
+    # Scale when any instance gets more than 1 request — triggers fast for demo
+    target_value = 1
   }
 }
