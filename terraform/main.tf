@@ -149,6 +149,7 @@ resource "aws_autoscaling_policy" "scale_policy" {
       resource_label         = "${aws_lb.cloudplay_alb.arn_suffix}/${aws_lb_target_group.cloudplay_tg.arn_suffix}"
     }
     # Scale when any instance gets more than 1 request — triggers fast for demo
-    target_value = 1
+    target_value = 5
   }
+  estimated_instance_warmup = 10
 }
