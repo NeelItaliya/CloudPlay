@@ -33,8 +33,13 @@ variable "iam_instance_profile" {
   default     = "cloudplay-ec2-role"
 }
 
-provider "aws" {
-  region     = var.aws_region
-  access_key = "AKIA4FDIOE3NIM2Q26N6"
-  secret_key = "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"
+
+variable "aws_access_key" {
+  description = "AWS Access Key ID"
+  default     = "AKIA4FDIOE3NIM2Q26N6"
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Access Key"
+  default     = "z3oXASEbH2a544eYnNTf9DZLNBipkNNqgSsK78jM"
 }

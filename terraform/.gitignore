@@ -3,6 +3,7 @@
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+variables.tf
 
 # Variable files that may contain secrets
 *.tfvars

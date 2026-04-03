@@ -1,3 +1,9 @@
+provider "aws" {
+  region     = var.aws_region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+}
+
 # ─── Data: reference existing VPC and subnets ──────────────────────────────
 
 data "aws_subnets" "public" {
