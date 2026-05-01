@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
 import json
@@ -23,7 +23,6 @@ app.add_middleware(
 AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE", "cloudplay-sessions")
 SESSION_TTL_SECONDS = 30 * 60  # 30 minutes
-ENDED_SESSION_TTL_SECONDS = int(os.getenv("ENDED_SESSION_TTL_SECONDS", 30 * 24 * 60 * 60))
 
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMODB_TABLE)
@@ -49,25 +48,6 @@ class MoveRequest(BaseModel):
 class EndSessionRequest(BaseModel):
     session_id: str
 
-class StartSnakeSessionRequest(BaseModel):
-    player_name: str
-
-class StartSnakeSessionResponse(BaseModel):
-    session_id: str
-    player_name: str
-    score: int
-    high_score: int
-    game_over: bool
-    started_at: int
-
-class SnakeScoreRequest(BaseModel):
-    session_id: str
-    score: int
-
-class EndSnakeSessionRequest(BaseModel):
-    session_id: str
-    score: int
-
 
 def get_session(session_id: str) -> dict:
     try:
@@ -88,7 +68,6 @@ def get_session(session_id: str) -> dict:
 def save_session(session_id: str, session: dict):
     table.put_item(Item={
         "session_id": session_id,
-        "game_type": "tictactoe",
         "board": json.dumps(session["board"]),
         "current_player": session["current_player"],
         "winner": session.get("winner") or "",
@@ -107,33 +86,6 @@ def count_sessions() -> int:
         return response.get("Count", 0)
     except ClientError:
         return 0
-
-def save_snake_session(session_id: str, session: Dict[str, Any]):
-    is_ended = bool(session.get("game_over", False))
-    table.put_item(Item={
-        "session_id": session_id,
-        "game_type": "snake",
-        "player_name": session["player_name"],
-        "score": int(session.get("score", 0)),
-        "high_score": int(session.get("high_score", 0)),
-        "game_over": int(session.get("game_over", False)),
-        "started_at": int(session["started_at"]),
-        "ended_at": int(session.get("ended_at", 0)),
-        "updated_at": int(time.time()),
-        "ttl": int(time.time()) + (ENDED_SESSION_TTL_SECONDS if is_ended else SESSION_TTL_SECONDS)
-    })
-
-def snake_response(session_id: str, session: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        "session_id": session_id,
-        "player_name": session.get("player_name", "Player"),
-        "score": int(session.get("score", 0)),
-        "high_score": int(session.get("high_score", 0)),
-        "game_over": bool(session.get("game_over", False)),
-        "started_at": int(session.get("started_at", 0)),
-        "ended_at": int(session.get("ended_at", 0)),
-        "updated_at": int(session.get("updated_at", 0)),
-    }
 
 
 def check_winner(board):
@@ -247,59 +199,3 @@ def end_session(request: EndSessionRequest):
 @app.get("/sessions")
 def list_sessions():
     return {"active_sessions": count_sessions()}
-
-@app.post("/snake/session/start", response_model=StartSnakeSessionResponse)
-def start_snake_session(request: StartSnakeSessionRequest):
-    player_name = request.player_name.strip()
-    if not player_name:
-        raise HTTPException(status_code=400, detail="Player name is required")
-
-    session_id = str(uuid4())
-    now = int(time.time())
-    session = {
-        "player_name": player_name,
-        "score": 0,
-        "high_score": 0,
-        "game_over": False,
-        "started_at": now,
-        "ended_at": 0,
-    }
-    save_snake_session(session_id, session)
-    return snake_response(session_id, session)
-
-@app.get("/snake/session/{session_id}")
-def get_snake_session_state(session_id: str):
-    session = get_session(session_id)
-    if not session or session.get("game_type") != "snake":
-        raise HTTPException(status_code=404, detail="Snake session not found")
-    save_snake_session(session_id, session)
-    return snake_response(session_id, session)
-
-@app.post("/snake/session/score")
-def update_snake_score(request: SnakeScoreRequest):
-    session = get_session(request.session_id)
-    if not session or session.get("game_type") != "snake":
-        raise HTTPException(status_code=404, detail="Snake session not found")
-
-    if bool(session.get("game_over", False)):
-        raise HTTPException(status_code=400, detail="Snake session already ended")
-
-    score = max(0, int(request.score))
-    session["score"] = score
-    session["high_score"] = max(int(session.get("high_score", 0)), score)
-    save_snake_session(request.session_id, session)
-    return snake_response(request.session_id, session)
-
-@app.post("/snake/session/end")
-def end_snake_session(request: EndSnakeSessionRequest):
-    session = get_session(request.session_id)
-    if not session or session.get("game_type") != "snake":
-        raise HTTPException(status_code=404, detail="Snake session not found")
-
-    score = max(0, int(request.score))
-    session["score"] = score
-    session["high_score"] = max(int(session.get("high_score", 0)), score)
-    session["game_over"] = True
-    session["ended_at"] = int(time.time())
-    save_snake_session(request.session_id, session)
-    return snake_response(request.session_id, session)

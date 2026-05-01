@@ -23,31 +23,6 @@ const games = [
       </svg>
     ),
   },
-  {
-    id: "snake",
-    title: "Snake",
-    description: "Guide the snake, collect food, and keep your cloud session record alive until the run ends.",
-    tag: "Arcade",
-    tagColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-    players: "1 Player",
-    status: "available",
-    gradient: "from-emerald-500/20 to-cyan-600/10",
-    border: "border-emerald-500/20",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-        <path
-          d="M10 30h16c5.5 0 10-4.5 10-10s-4.5-10-10-10h-5"
-          stroke="#34d399"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="11" cy="30" r="5" fill="#6ee7b7" />
-        <circle cx="26" cy="10" r="2" fill="#0f172a" />
-        <circle cx="39" cy="35" r="4" fill="#fb7185" />
-      </svg>
-    ),
-  },
 ];
 
 export default function Games({ navigate }) {
