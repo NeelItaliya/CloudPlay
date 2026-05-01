@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const BASE_URL = "http://cloudplay-alb-1011325102.ap-south-1.elb.amazonaws.com";
+const BASE_URL = "http://cloudplay-alb-39971291.ap-south-1.elb.amazonaws.com";
 const GRID_SIZE = 15;
 const START_SNAKE = [
   { x: 7, y: 7 },
@@ -98,8 +98,6 @@ export default function Snake({ navigate }) {
   const [nextDirection, setNextDirection] = useState(DIRECTIONS.ArrowRight);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [startedAt, setStartedAt] = useState(null);
-  const [endedAt, setEndedAt] = useState(null);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -123,9 +121,19 @@ export default function Snake({ navigate }) {
     setDirection(DIRECTIONS.ArrowRight);
     setNextDirection(DIRECTIONS.ArrowRight);
     setScore(0);
-    setEndedAt(null);
     setGameOver(false);
     endedRef.current = false;
+  };
+
+  const resetLocalBoard = () => {
+    setSnake(START_SNAKE);
+    setFood(START_FOOD);
+    setDirection(DIRECTIONS.ArrowRight);
+    setNextDirection(DIRECTIONS.ArrowRight);
+    setScore(0);
+    setError(null);
+    setGameOver(false);
+    setRunning(Boolean(sessionId && !endedRef.current));
   };
 
   const startSession = async (name) => {
@@ -144,26 +152,12 @@ export default function Snake({ navigate }) {
       setSessionId(data.session_id);
       setPlayerName(data.player_name);
       setHighScore(data.high_score || 0);
-      setStartedAt(data.started_at);
       setRunning(true);
       setShowModal(false);
     } catch (e) {
       setError("Could not connect to backend");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updateScore = async (nextScore) => {
-    if (!sessionId) return;
-    try {
-      await fetch(`${BASE_URL}/snake/session/score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, score: nextScore }),
-      });
-    } catch {
-      setError("Score update failed, but your game can continue");
     }
   };
 
@@ -181,7 +175,6 @@ export default function Snake({ navigate }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.detail || "Unable to end Snake session");
       setHighScore(data.high_score || finalScore);
-      setEndedAt(data.ended_at || Math.floor(Date.now() / 1000));
     } catch {
       setError("Game ended locally, but the ending record could not be saved");
     }
@@ -230,7 +223,6 @@ export default function Snake({ navigate }) {
           setScore(nextScore);
           setHighScore((currentHigh) => Math.max(currentHigh, nextScore));
           setFood(getRandomFood(nextSnake));
-          updateScore(nextScore);
           return nextSnake;
         }
 
@@ -249,11 +241,6 @@ export default function Snake({ navigate }) {
       await endSession(score);
     }
     navigate("games");
-  };
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "-";
-    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -319,8 +306,6 @@ export default function Snake({ navigate }) {
               {[
                 { label: "Score", value: score },
                 { label: "Best", value: highScore },
-                { label: "Started", value: formatTime(startedAt) },
-                { label: "Ended", value: formatTime(endedAt) },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-3">
                   <div className="text-xs text-gray-500 mb-1">{label}</div>
@@ -344,11 +329,11 @@ export default function Snake({ navigate }) {
                 {sessionId ? "New Game" : "Start Game"}
               </button>
               <button
-                onClick={() => endSession(score)}
-                disabled={!sessionId || gameOver}
+                onClick={resetLocalBoard}
+                disabled={!sessionId}
                 className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                End
+                Reset
               </button>
             </div>
 
