@@ -204,16 +204,40 @@ export default function TicTacToe({ navigate }) {
           <span className="text-sm font-medium">Back to Games</span>
         </button>
 
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-3">
+            Classic
+          </div>
+          <h1 className="text-4xl font-black text-white">Tic Tac Toe</h1>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* Left: board */}
-          <div className="space-y-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-3">
-                Classic
-              </div>
-              <h1 className="text-4xl font-black text-white">Tic Tac Toe</h1>
+          <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-6">
+            <div className="grid grid-cols-3 gap-3">
+              {board.map((cell, index) => (
+                <button
+                  key={index}
+                  onClick={() => makeMove(index)}
+                  disabled={loading || gameOver || !sessionId || !!cell}
+                  className={`aspect-square rounded-xl text-4xl font-black transition-all duration-150 border ${
+                    cell === "X"
+                      ? "text-cyan-400 border-cyan-500/30 bg-cyan-500/10 shadow-lg shadow-cyan-500/10"
+                      : cell === "O"
+                      ? "text-pink-400 border-pink-500/30 bg-pink-500/10 shadow-lg shadow-pink-500/10"
+                      : sessionId && !gameOver
+                      ? "border-white/8 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20 cursor-pointer"
+                      : "border-white/5 bg-white/[0.01] cursor-not-allowed"
+                  }`}
+                >
+                  {cell}
+                </button>
+              ))}
             </div>
+          </div>
 
+          {/* Right: info */}
+          <div className="space-y-4">
             {/* Player tags */}
             {playerX && playerO && (
               <div className="flex gap-3">
@@ -228,50 +252,6 @@ export default function TicTacToe({ navigate }) {
               </div>
             )}
 
-            {/* Board */}
-            <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-6">
-              <div className="grid grid-cols-3 gap-3">
-                {board.map((cell, index) => (
-                  <button
-                    key={index}
-                    onClick={() => makeMove(index)}
-                    disabled={loading || gameOver || !sessionId || !!cell}
-                    className={`aspect-square rounded-xl text-4xl font-black transition-all duration-150 border ${
-                      cell === "X"
-                        ? "text-cyan-400 border-cyan-500/30 bg-cyan-500/10 shadow-lg shadow-cyan-500/10"
-                        : cell === "O"
-                        ? "text-pink-400 border-pink-500/30 bg-pink-500/10 shadow-lg shadow-pink-500/10"
-                        : sessionId && !gameOver
-                        ? "border-white/8 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20 cursor-pointer"
-                        : "border-white/5 bg-white/[0.01] cursor-not-allowed"
-                    }`}
-                  >
-                    {cell}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(true)}
-                disabled={loading}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-cyan-500/20"
-              >
-                {sessionId ? "New Game" : "Start Game"}
-              </button>
-              <button
-                onClick={resetLocal}
-                className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          {/* Right: info */}
-          <div className="space-y-4">
             {/* Status */}
             <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-5">
               <div className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">Match Status</div>
@@ -281,9 +261,8 @@ export default function TicTacToe({ navigate }) {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Session", value: sessionId ? `${sessionId.slice(0, 6)}...` : "—" },
                 { label: "Turn", value: gameOver ? "Done" : (currentPlayerName || currentPlayer) },
                 { label: "Moves", value: `${filledCount}/9` },
               ].map(({ label, value }) => (
@@ -317,21 +296,21 @@ export default function TicTacToe({ navigate }) {
               </div>
             )}
 
-            {/* Cloud info */}
-            <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-5">
-              <div className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-3">Cloud Infrastructure</div>
-              <div className="space-y-2">
-                {[
-                  { label: "Backend", value: "FastAPI on EC2" },
-                  { label: "Sessions", value: "AWS DynamoDB" },
-                  { label: "Scaling", value: "AWS ASG + ALB" },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="text-gray-300 font-medium">{value}</span>
-                  </div>
-                ))}
-              </div>
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModal(true)}
+                disabled={loading}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+              >
+                {sessionId ? "New Game" : "Start Game"}
+              </button>
+              <button
+                onClick={resetLocal}
+                className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+              >
+                Reset
+              </button>
             </div>
           </div>
         </div>

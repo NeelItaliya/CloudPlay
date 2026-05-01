@@ -24,36 +24,27 @@ const games = [
     ),
   },
   {
-    id: "coming1",
-    title: "Coming Soon",
-    description: "More games are being added to the CloudPlay platform. Stay tuned for updates!",
-    tag: "Soon",
-    tagColor: "text-gray-400 bg-gray-400/10 border-gray-400/20",
-    players: "—",
-    status: "coming",
-    gradient: "from-gray-500/10 to-gray-600/5",
-    border: "border-gray-700/40",
+    id: "snake",
+    title: "Snake",
+    description: "Guide the snake, collect food, and keep your cloud session record alive until the run ends.",
+    tag: "Arcade",
+    tagColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+    players: "1 Player",
+    status: "available",
+    gradient: "from-emerald-500/20 to-cyan-600/10",
+    border: "border-emerald-500/20",
     icon: (
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-        <circle cx="24" cy="24" r="18" stroke="#4b5563" strokeWidth="2" strokeDasharray="4 4"/>
-        <text x="17" y="29" fontSize="18" fill="#4b5563">?</text>
-      </svg>
-    ),
-  },
-  {
-    id: "coming2",
-    title: "Coming Soon",
-    description: "More games are being added to the CloudPlay platform. Stay tuned for updates!",
-    tag: "Soon",
-    tagColor: "text-gray-400 bg-gray-400/10 border-gray-400/20",
-    players: "—",
-    status: "coming",
-    gradient: "from-gray-500/10 to-gray-600/5",
-    border: "border-gray-700/40",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-        <circle cx="24" cy="24" r="18" stroke="#4b5563" strokeWidth="2" strokeDasharray="4 4"/>
-        <text x="17" y="29" fontSize="18" fill="#4b5563">?</text>
+        <path
+          d="M10 30h16c5.5 0 10-4.5 10-10s-4.5-10-10-10h-5"
+          stroke="#34d399"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="11" cy="30" r="5" fill="#6ee7b7" />
+        <circle cx="26" cy="10" r="2" fill="#0f172a" />
+        <circle cx="39" cy="35" r="4" fill="#fb7185" />
       </svg>
     ),
   },

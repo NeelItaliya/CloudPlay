@@ -1,10 +1,8 @@
 provider "aws" {
   region     = var.aws_region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
 }
 
-# ─── Data: reference existing VPC and subnets ──────────────────────────────
+#Data: reference existing VPC and subnets
 
 data "aws_subnets" "public" {
   filter {
@@ -13,7 +11,7 @@ data "aws_subnets" "public" {
   }
 }
 
-# ─── Security Group: ALB only ──────────────────────────────────────────────
+#Security Group: ALB
 
 resource "aws_security_group" "alb_sg" {
   name        = "cloudplay-alb-sg"
@@ -39,7 +37,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ─── Target Group ──────────────────────────────────────────────────────────
+#Target Group
 
 resource "aws_lb_target_group" "cloudplay_tg" {
   name        = "cloudplay-tg"
@@ -64,7 +62,7 @@ resource "aws_lb_target_group" "cloudplay_tg" {
   }
 }
 
-# ─── Application Load Balancer ─────────────────────────────────────────────
+#Application Load Balancer
 
 resource "aws_lb" "cloudplay_alb" {
   name               = "cloudplay-alb"
@@ -89,7 +87,7 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ─── Launch Template ───────────────────────────────────────────────────────
+#Launch Template
 
 resource "aws_launch_template" "cloudplay_lt" {
   name          = "cloudplay-launch-template"
@@ -113,7 +111,7 @@ resource "aws_launch_template" "cloudplay_lt" {
   }
 }
 
-# ─── Auto Scaling Group ────────────────────────────────────────────────────
+#Auto Scaling Group
 
 resource "aws_autoscaling_group" "cloudplay_asg" {
   name                = "cloudplay-asg"
@@ -136,7 +134,7 @@ resource "aws_autoscaling_group" "cloudplay_asg" {
   }
 }
 
-# ─── Auto Scaling Policy ───────────────────────────────────────────────────
+#Auto Scaling Policy
 
 resource "aws_autoscaling_policy" "scale_policy" {
   name                   = "cloudplay-request-scaling"

@@ -11,8 +11,7 @@ export default function Navbar({ navigate, currentPage }) {
   }, []);
 
   const links = [
-    { label: "Games", page: "games" },
-    { label: "About", page: "about" },
+    { label: "Home", page: "home" },
   ];
 
   return (

@@ -3,7 +3,7 @@ import Navbar from "./components/Navbar";
 import Landing from "./pages/Landing";
 import Games from "./pages/Games";
 import TicTacToe from "./pages/TicTacToe";
-import About from "./pages/About";
+import Snake from "./pages/Snake";
 
 export default function App() {
   const [page, setPage] = useState("home");
@@ -21,7 +21,7 @@ export default function App() {
       {page === "home" && <Landing navigate={navigate} />}
       {page === "games" && <Games navigate={navigate} />}
       {page === "play" && selectedGame === "tictactoe" && <TicTacToe navigate={navigate} />}
-      {page === "about" && <About />}
+      {page === "play" && selectedGame === "snake" && <Snake navigate={navigate} />}
     </div>
   );
 }

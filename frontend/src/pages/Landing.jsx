@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 
 export default function Landing({ navigate }) {
   return (
@@ -39,78 +39,13 @@ export default function Landing({ navigate }) {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <button
               onClick={() => navigate("games")}
               className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg hover:opacity-90 transition-all shadow-2xl shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5"
             >
               Browse Games
             </button>
-            <button
-              onClick={() => navigate("about")}
-              className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-lg hover:bg-white/10 transition-all"
-            >
-              Learn More
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-20 grid grid-cols-3 gap-8 max-w-lg mx-auto">
-            {[
-              { value: "99.9%", label: "Uptime" },
-              { value: "Auto", label: "Scaling" },
-              { value: "0ms", label: "Install time" },
-            ].map(({ value, label }) => (
-              <div key={label} className="text-center">
-                <div className="text-3xl font-black text-white mb-1">{value}</div>
-                <div className="text-sm text-gray-500">{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="relative py-32 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-4">Built for the Cloud</h2>
-            <p className="text-gray-400 text-lg">Enterprise-grade infrastructure for a seamless gaming experience</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: "⚡",
-                title: "Auto Scaling",
-                desc: "AWS Auto Scaling Group spins up new instances automatically when traffic increases.",
-                color: "from-yellow-500/20 to-orange-500/10",
-                border: "border-yellow-500/20",
-              },
-              {
-                icon: "⚖️",
-                title: "Load Balancing",
-                desc: "Application Load Balancer distributes traffic across multiple EC2 instances seamlessly.",
-                color: "from-cyan-500/20 to-blue-500/10",
-                border: "border-cyan-500/20",
-              },
-              {
-                icon: "🔴",
-                title: "Redis Sessions",
-                desc: "Game sessions stored in Redis so any instance can serve any player at any time.",
-                color: "from-red-500/20 to-pink-500/10",
-                border: "border-red-500/20",
-              },
-            ].map(({ icon, title, desc, color, border }) => (
-              <div
-                key={title}
-                className={`relative p-6 rounded-2xl bg-gradient-to-br ${color} border ${border} backdrop-blur-sm`}
-              >
-                <div className="text-4xl mb-4">{icon}</div>
-                <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
