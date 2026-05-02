@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const BASE_URL = "http://cloudplay-alb-39971291.ap-south-1.elb.amazonaws.com";
+const BASE_URL = "http://cloudplay-alb-835639807.ap-south-1.elb.amazonaws.com";
 const initialBoard = Array(9).fill("");
 
 function PlayerModal({ onStart, onClose, loading }) {
